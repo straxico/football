@@ -1,0 +1,5 @@
+{
+  "name": "Group Lottery System",
+  "description": "A lottery system to randomly divide a list of people into groups of two, inspired by a chat app UI.",
+  "requestFramePermissions": []
+}
