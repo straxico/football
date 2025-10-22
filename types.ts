@@ -1,10 +1,8 @@
 export interface User {
   id: number;
   name: string;
-  status: string;
-  online: boolean;
-  avatar: string | null;
   initials?: string;
+  pot: number;
 }
 
 export type Group = User[];

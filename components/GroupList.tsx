@@ -1,4 +1,3 @@
-
 import React from 'react';
 import type { Group } from '../types';
 
@@ -25,13 +24,9 @@ const GroupList: React.FC<GroupListProps> = ({ groups }) => {
             <ul className="space-y-3">
               {group.map((user) => (
                 <li key={user.id} className="flex items-center justify-center space-x-3 text-white text-base">
-                  {user.avatar ? (
-                    <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full object-cover" />
-                  ) : (
-                    <span className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-bold">
-                      {user.initials}
-                    </span>
-                  )}
+                  <span className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-bold">
+                    {user.initials}
+                  </span>
                   <span>{user.name}</span>
                 </li>
               ))}
