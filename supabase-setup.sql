@@ -70,21 +70,33 @@ CREATE POLICY "Users can insert their own bets"
 CREATE OR REPLACE FUNCTION update_user_score()
 RETURNS TRIGGER AS $$
 BEGIN
-  IF NEW.is_correct IS NOT NULL THEN
-    UPDATE public.betting_users
-    SET 
-      total_bets = total_bets + 1,
-      correct_predictions = CASE WHEN NEW.is_correct THEN correct_predictions + 1 ELSE correct_predictions END,
-      wrong_predictions = CASE WHEN NOT NEW.is_correct THEN wrong_predictions + 1 ELSE wrong_predictions END,
-      score = (
-        SELECT 
-          (COUNT(*) FILTER (WHERE is_correct = true) * 3) - 
-          (COUNT(*) FILTER (WHERE is_correct = false) * 1)
-        FROM public.bets
-        WHERE user_id = NEW.user_id
-      )
-    WHERE id = NEW.user_id;
-  END IF;
+  -- محاسبه مجدد همه آمارها از جدول bets
+  UPDATE public.betting_users
+  SET 
+    total_bets = (
+      SELECT COUNT(*)
+      FROM public.bets
+      WHERE user_id = NEW.user_id AND is_correct IS NOT NULL
+    ),
+    correct_predictions = (
+      SELECT COUNT(*)
+      FROM public.bets
+      WHERE user_id = NEW.user_id AND is_correct = true
+    ),
+    wrong_predictions = (
+      SELECT COUNT(*)
+      FROM public.bets
+      WHERE user_id = NEW.user_id AND is_correct = false
+    ),
+    score = (
+      SELECT 
+        COALESCE((COUNT(*) FILTER (WHERE is_correct = true) * 3) - 
+        (COUNT(*) FILTER (WHERE is_correct = false) * 1), 0)
+      FROM public.bets
+      WHERE user_id = NEW.user_id AND is_correct IS NOT NULL
+    )
+  WHERE id = NEW.user_id;
+  
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
