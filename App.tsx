@@ -3,6 +3,10 @@ import UserList from './components/UserList';
 import GroupList from './components/GroupList';
 import ScheduleComponent from './components/Schedule';
 import ResultsTable from './components/ResultsTable';
+import AuthPage from './components/AuthPage';
+import BettingPanel from './components/BettingPanel';
+import Leaderboard from './components/Leaderboard';
+import { useAuth } from './contexts/AuthContext';
 import type { User, Group, Schedule, Match, TeamStats } from './types';
 
 // Hardcoded Bin ID for public access
@@ -43,6 +47,7 @@ function generateSchedule(groups: Group[]): Schedule {
 
 
 const App: React.FC = () => {
+  const { user, bettingUser, loading: authLoading, signOut } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [schedule, setSchedule] = useState<Schedule>([]);
@@ -50,6 +55,7 @@ const App: React.FC = () => {
   const [isGrouping, setIsGrouping] = useState<boolean>(false);
   const [apiKey, setApiKey] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [activeTab, setActiveTab] = useState<'league' | 'betting' | 'leaderboard'>('league');
 
 
   const loadData = useCallback(async () => {
@@ -245,115 +251,204 @@ const App: React.FC = () => {
 
   return (
     <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 min-h-screen text-white p-4 sm:p-8">
-      <div className="container mx-auto max-w-7xl">
-        <header className="text-center mb-8 sm:mb-12 relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-teal-600/10 blur-3xl"></div>
-          <div className="relative">
-            <div className="inline-block mb-4">
-              <div className="text-6xl mb-2">⚽</div>
-            </div>
-            <h1 className="text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-teal-300 to-emerald-400 pb-2 mb-3 animate-gradient">
-              سیستم قرعه کشی فوتبال
-            </h1>
-            <p className="text-gray-400 mt-2 text-base sm:text-lg font-medium">مدیریت حرفه‌ای مسابقات لیگ دستی</p>
+      {/* Auth Check */}
+      {authLoading ? (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="flex flex-col items-center gap-4">
+            <svg className="animate-spin h-16 w-16 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p className="text-gray-400 text-lg">در حال بارگذاری...</p>
           </div>
-        </header>
-
-        <main className="grid grid-cols-1 lg:grid-cols-5 gap-6 sm:gap-8">
-          {/* Sidebar - User List */}
-          <div className="lg:col-span-2 order-2 lg:order-1">
-            <UserList users={users} onUpdateUser={handleUpdateUser} isLoading={isLoading} apiKey={apiKey} />
-          </div>
-
-          {/* Main Content Area */}
-          <div className="lg:col-span-3 flex flex-col items-center justify-start space-y-6 order-1 lg:order-2">
-            {/* Control Panel */}
-            <div className="w-full flex flex-col space-y-4">
-              <div className="w-full flex space-x-4 space-x-reverse">
-                <button 
-                  onClick={loadData} 
-                  className="flex-1 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white font-semibold py-3 px-4 rounded-xl shadow-lg hover:shadow-sky-500/40 transition-all duration-200 flex items-center justify-center gap-2 transform hover:scale-105"
-                >
-                  <span className="text-xl">🔄</span>
-                  <span>بارگذاری از سرور</span>
-                </button>
+        </div>
+      ) : !user ? (
+        <AuthPage />
+      ) : (
+        <div className="container mx-auto max-w-7xl">
+          <header className="text-center mb-8 sm:mb-12 relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-teal-600/10 blur-3xl"></div>
+            <div className="relative">
+              <div className="inline-block mb-4">
+                <div className="text-6xl mb-2">⚽</div>
               </div>
+              <h1 className="text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-teal-300 to-emerald-400 pb-2 mb-3 animate-gradient">
+                فوتبال دستی
+              </h1>
+              <p className="text-gray-400 mt-2 text-base sm:text-lg font-medium">مدیریت حرفه‌ای مسابقات و پیش‌بینی نتایج</p>
               
-              <details className="bg-gradient-to-br from-slate-800 to-slate-800/50 backdrop-blur-sm rounded-xl p-5 w-full border border-slate-700/50 shadow-xl">
-                <summary className="font-bold text-teal-300 cursor-pointer flex items-center gap-2 hover:text-teal-200 transition-colors">
-                  <span className="text-xl">⚙️</span>
-                  <span>پنل مدیریت</span>
-                </summary>
-                <div className="mt-4 space-y-4">
-                  <div className="space-y-3">
-                    <p className="text-xs text-gray-400 bg-slate-900/50 p-3 rounded-lg border-r-4 border-blue-500">
-                      💡 برای دسترسی به امکانات مدیریتی، کلید API خود را وارد کنید
-                    </p>
-                    <input
-                      type="password"
-                      placeholder="🔑 کلید API مدیر (X-Master-Key)"
-                      value={apiKey}
-                      onChange={(e) => setApiKey(e.target.value)}
-                      className="w-full bg-slate-900 text-white p-3 rounded-lg border-2 border-slate-600 focus:border-blue-500 focus:outline-none transition-colors placeholder-gray-500"
-                    />
-                  </div>
-
-                  {apiKey && (
-                    <div className="pt-4 border-t border-slate-700 space-y-3">
-                      <button
-                        onClick={handleCreateGroups}
-                        disabled={isGrouping || users.length === 0}
-                        className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-blue-900 disabled:to-blue-900 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-xl text-lg shadow-lg hover:shadow-blue-500/50 transform hover:-translate-y-1 transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-blue-300/50"
-                      >
-                        {isGrouping ? (
-                          <div className="flex items-center justify-center gap-3">
-                            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            <span>در حال قرعه کشی...</span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-center gap-2">
-                            <span className="text-2xl">🎲</span>
-                            <span>شروع قرعه کشی</span>
-                          </div>
-                        )}
-                      </button>
-                      <button 
-                        onClick={handleSaveOnline} 
-                        className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-3 px-4 rounded-xl shadow-lg hover:shadow-green-500/40 transition-all duration-200 flex items-center justify-center gap-2 transform hover:scale-105"
-                      >
-                        <span className="text-xl">💾</span>
-                        <span>ذخیره آنلاین</span>
-                      </button>
+              {/* User Info & Logout */}
+              {bettingUser && (
+                <div className="mt-6 flex items-center justify-center gap-4">
+                  <div className="bg-slate-800/50 rounded-xl px-6 py-3 border border-slate-700/50 backdrop-blur-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold">
+                        {bettingUser.display_name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="text-right">
+                        <p className="text-white font-bold">{bettingUser.display_name}</p>
+                        <p className="text-xs text-gray-400">امتیاز: {bettingUser.score}</p>
+                      </div>
                     </div>
-                  )}
+                  </div>
+                  <button
+                    onClick={signOut}
+                    className="bg-red-600/20 hover:bg-red-600/30 text-red-400 px-4 py-3 rounded-xl font-semibold transition-all duration-200 border border-red-600/30"
+                  >
+                    خروج 🚪
+                  </button>
                 </div>
-              </details>
+              )}
             </div>
+          </header>
 
-            {/* Results Table - Priority #1 */}
-            {teamStats.length > 0 && (
-              <div className="w-full animate-fade-in">
-                <ResultsTable stats={teamStats} />
-              </div>
-            )}
-
-            {/* Groups - Priority #2 */}
-            <div className="w-full">
-              <GroupList groups={groups} />
+          {/* Navigation Tabs */}
+          <div className="flex justify-center mb-8">
+            <div className="bg-slate-800/50 rounded-xl p-2 border border-slate-700/50 backdrop-blur-sm inline-flex gap-2">
+              <button
+                onClick={() => setActiveTab('league')}
+                className={`px-6 py-3 rounded-lg font-bold transition-all duration-200 ${
+                  activeTab === 'league'
+                    ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg'
+                    : 'text-gray-400 hover:text-white hover:bg-slate-700/50'
+                }`}
+              >
+                ⚽ لیگ و نتایج
+              </button>
+              <button
+                onClick={() => setActiveTab('betting')}
+                className={`px-6 py-3 rounded-lg font-bold transition-all duration-200 ${
+                  activeTab === 'betting'
+                    ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg'
+                    : 'text-gray-400 hover:text-white hover:bg-slate-700/50'
+                }`}
+              >
+                🎯 پیش‌بینی
+              </button>
+              <button
+                onClick={() => setActiveTab('leaderboard')}
+                className={`px-6 py-3 rounded-lg font-bold transition-all duration-200 ${
+                  activeTab === 'leaderboard'
+                    ? 'bg-gradient-to-r from-yellow-600 to-orange-600 text-white shadow-lg'
+                    : 'text-gray-400 hover:text-white hover:bg-slate-700/50'
+                }`}
+              >
+                🏆 لیدربورد
+              </button>
             </div>
-
-            {/* Schedule - Priority #3 */}
-            {schedule.length > 0 && (
-              <div className="w-full">
-                <ScheduleComponent schedule={schedule} groups={groups} onScoreChange={handleScoreChange} />
-              </div>
-            )}
           </div>
-        </main>
-      </div>
+
+          {/* Content based on active tab */}
+          {activeTab === 'league' && (
+            <main className="grid grid-cols-1 lg:grid-cols-5 gap-6 sm:gap-8">
+              {/* Sidebar - User List */}
+              <div className="lg:col-span-2 order-2 lg:order-1">
+                <UserList users={users} onUpdateUser={handleUpdateUser} isLoading={isLoading} apiKey={apiKey} />
+              </div>
+
+              {/* Main Content Area */}
+              <div className="lg:col-span-3 flex flex-col items-center justify-start space-y-6 order-1 lg:order-2">
+                {/* Control Panel */}
+                <div className="w-full flex flex-col space-y-4">
+                  <div className="w-full flex space-x-4 space-x-reverse">
+                    <button 
+                      onClick={loadData} 
+                      className="flex-1 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white font-semibold py-3 px-4 rounded-xl shadow-lg hover:shadow-sky-500/40 transition-all duration-200 flex items-center justify-center gap-2 transform hover:scale-105"
+                    >
+                      <span className="text-xl">🔄</span>
+                      <span>بارگذاری از سرور</span>
+                    </button>
+                  </div>
+                  
+                  <details className="bg-gradient-to-br from-slate-800 to-slate-800/50 backdrop-blur-sm rounded-xl p-5 w-full border border-slate-700/50 shadow-xl">
+                    <summary className="font-bold text-teal-300 cursor-pointer flex items-center gap-2 hover:text-teal-200 transition-colors">
+                      <span className="text-xl">⚙️</span>
+                      <span>پنل مدیریت</span>
+                    </summary>
+                    <div className="mt-4 space-y-4">
+                      <div className="space-y-3">
+                        <p className="text-xs text-gray-400 bg-slate-900/50 p-3 rounded-lg border-r-4 border-blue-500">
+                          💡 برای دسترسی به امکانات مدیریتی، کلید API خود را وارد کنید
+                        </p>
+                        <input
+                          type="password"
+                          placeholder="🔑 کلید API مدیر (X-Master-Key)"
+                          value={apiKey}
+                          onChange={(e) => setApiKey(e.target.value)}
+                          className="w-full bg-slate-900 text-white p-3 rounded-lg border-2 border-slate-600 focus:border-blue-500 focus:outline-none transition-colors placeholder-gray-500"
+                        />
+                      </div>
+
+                      {apiKey && (
+                        <div className="pt-4 border-t border-slate-700 space-y-3">
+                          <button
+                            onClick={handleCreateGroups}
+                            disabled={isGrouping || users.length === 0}
+                            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-blue-900 disabled:to-blue-900 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-xl text-lg shadow-lg hover:shadow-blue-500/50 transform hover:-translate-y-1 transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-blue-300/50"
+                          >
+                            {isGrouping ? (
+                              <div className="flex items-center justify-center gap-3">
+                                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span>در حال قرعه کشی...</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-center gap-2">
+                                <span className="text-2xl">🎲</span>
+                                <span>شروع قرعه کشی</span>
+                              </div>
+                            )}
+                          </button>
+                          <button 
+                            onClick={handleSaveOnline} 
+                            className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-3 px-4 rounded-xl shadow-lg hover:shadow-green-500/40 transition-all duration-200 flex items-center justify-center gap-2 transform hover:scale-105"
+                          >
+                            <span className="text-xl">💾</span>
+                            <span>ذخیره آنلاین</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </details>
+                </div>
+
+                {/* Results Table - Priority #1 */}
+                {teamStats.length > 0 && (
+                  <div className="w-full animate-fade-in">
+                    <ResultsTable stats={teamStats} />
+                  </div>
+                )}
+
+                {/* Groups - Priority #2 */}
+                <div className="w-full">
+                  <GroupList groups={groups} />
+                </div>
+
+                {/* Schedule - Priority #3 */}
+                {schedule.length > 0 && (
+                  <div className="w-full">
+                    <ScheduleComponent schedule={schedule} groups={groups} onScoreChange={handleScoreChange} />
+                  </div>
+                )}
+              </div>
+            </main>
+          )}
+
+          {activeTab === 'betting' && (
+            <div className="max-w-5xl mx-auto">
+              <BettingPanel schedule={schedule} groups={groups} />
+            </div>
+          )}
+
+          {activeTab === 'leaderboard' && (
+            <div className="max-w-4xl mx-auto">
+              <Leaderboard />
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
