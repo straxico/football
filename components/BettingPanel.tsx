@@ -230,22 +230,59 @@ const BettingPanel: React.FC<BettingPanelProps> = ({ schedule, groups }) => {
                           </button>
                         </div>
                       ) : (
-                        <div className="text-center">
-                          {userBet ? (
-                            <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-bold ${
-                              userBet.is_correct
-                                ? 'bg-green-500/20 text-green-400'
-                                : userBet.is_correct === false
-                                ? 'bg-red-500/20 text-red-400'
-                                : 'bg-gray-500/20 text-gray-400'
-                            }`}>
-                              {userBet.is_correct ? '✅ پیش‌بینی درست' : userBet.is_correct === false ? '❌ پیش‌بینی اشتباه' : '⏳ در انتظار نتیجه'}
+                        <div className="space-y-3">
+                          {/* نمایش نتیجه بازی */}
+                          <div className="bg-slate-700/50 rounded-lg p-3 text-center">
+                            <div className="flex items-center justify-center gap-4">
+                              <span className={`text-xl font-bold ${score1 > score2 ? 'text-green-400' : 'text-gray-400'}`}>
+                                گروه {group1Index + 1}: {score1}
+                              </span>
+                              <span className="text-gray-500">-</span>
+                              <span className={`text-xl font-bold ${score2 > score1 ? 'text-green-400' : 'text-gray-400'}`}>
+                                گروه {group2Index + 1}: {score2}
+                              </span>
                             </div>
-                          ) : (
-                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-bold bg-gray-500/20 text-gray-400">
-                              🚫 پیش‌بینی نکرده‌اید
-                            </div>
-                          )}
+                          </div>
+                          
+                          {/* نمایش وضعیت پیش‌بینی */}
+                          <div className="text-center">
+                            {userBet ? (
+                              <div>
+                                {userBet.is_correct !== null ? (
+                                  <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-bold ${
+                                    userBet.is_correct
+                                      ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                      : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                                  }`}>
+                                    {userBet.is_correct ? (
+                                      <>
+                                        <span className="text-2xl">🎉</span>
+                                        <span>پیش‌بینی درست! +3 امتیاز</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <span className="text-2xl">😢</span>
+                                        <span>پیش‌بینی اشتباه! -1 امتیاز</span>
+                                      </>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-bold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                                    <span>⏳</span>
+                                    <span>در حال محاسبه...</span>
+                                  </div>
+                                )}
+                                <p className="text-xs text-gray-400 mt-2">
+                                  پیش‌بینی شما: گروه {userBet.predicted_winner !== null ? userBet.predicted_winner + 1 : '؟'}
+                                </p>
+                              </div>
+                            ) : (
+                              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-bold bg-gray-500/20 text-gray-400 border border-gray-500/30">
+                                <span>🚫</span>
+                                <span>پیش‌بینی نکرده‌اید</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>
