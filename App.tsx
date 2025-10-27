@@ -7,6 +7,7 @@ import AuthPage from './components/AuthPage';
 import BettingPanel from './components/BettingPanel';
 import Leaderboard from './components/Leaderboard';
 import { useAuth } from './contexts/AuthContext';
+import { supabase } from './lib/supabase';
 import type { User, Group, Schedule, Match, TeamStats } from './types';
 
 // Hardcoded Bin ID for public access
@@ -209,13 +210,71 @@ const App: React.FC = () => {
     }, 1000); 
   }, [users]);
 
-  const handleScoreChange = (dayIndex: number, matchIndex: number, teamIndex: 0 | 1, newScore: number) => {
+  const handleScoreChange = async (dayIndex: number, matchIndex: number, teamIndex: 0 | 1, newScore: number) => {
     setSchedule(prevSchedule => {
         const newSchedule = JSON.parse(JSON.stringify(prevSchedule)); // Deep copy
         const match = newSchedule[dayIndex][matchIndex];
         match.score[teamIndex] = isNaN(newScore) || newScore < 0 ? null : newScore;
+        
+        // اگر هر دو امتیاز وارد شده، نتایج شرط‌بندی‌ها را بروزرسانی کن
+        const [score1, score2] = match.score;
+        if (score1 !== null && score2 !== null) {
+          updateBettingResults(dayIndex, matchIndex, match.teams, score1, score2);
+        }
+        
         return newSchedule;
     });
+  };
+
+  const updateBettingResults = async (
+    dayIndex: number, 
+    matchIndex: number, 
+    teams: [number, number],
+    score1: number,
+    score2: number
+  ) => {
+    try {
+      // تعیین برنده
+      const actualWinner = score1 > score2 ? teams[0] : score2 > score1 ? teams[1] : null;
+      
+      // دریافت همه شرط‌بندی‌های این بازی
+      const { data: bets, error: fetchError } = await supabase
+        .from('bets')
+        .select('*')
+        .eq('match_day', dayIndex)
+        .eq('match_index', matchIndex);
+
+      if (fetchError) {
+        console.error('Error fetching bets:', fetchError);
+        return;
+      }
+
+      if (!bets || bets.length === 0) {
+        console.log('No bets found for this match');
+        return;
+      }
+
+      // بروزرسانی هر شرط‌بندی
+      for (const bet of bets) {
+        const isCorrect = bet.predicted_winner === actualWinner;
+        
+        const { error: updateError } = await supabase
+          .from('bets')
+          .update({
+            actual_winner: actualWinner,
+            is_correct: isCorrect
+          })
+          .eq('id', bet.id);
+
+        if (updateError) {
+          console.error('Error updating bet:', updateError);
+        }
+      }
+
+      console.log(`✅ Updated ${bets.length} bets for match ${dayIndex}-${matchIndex}`);
+    } catch (error) {
+      console.error('Error in updateBettingResults:', error);
+    }
   };
   
   const handleUpdateUser = (updatedUser: User) => {
